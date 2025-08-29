@@ -3,27 +3,28 @@ from tqdm import tqdm
 from scipy.signal import find_peaks
 
 def vir_ULA(Nt, L, P, SNR, N_test):
+    # ================================================================================================
     d_Nr = 1 + L              # Number of virtual antennas
     d_Ne = Nt                 # Number of expected source
     d_fc = 39e6               # Carrier frequency
     d_c = 3e8                 # Speed of light
     d_d = d_c / (2 * d_fc)    # Half of wavelength
-    
+    # ================================================================================================
     # True angles
     v_theta_deg_true = np.array([-60, -45, -30, 0, 15, 30, 45, 60])
     v_theta_rad_true = np.deg2rad(v_theta_deg_true)
-    
+    # ================================================================================================
     # QPSK signal generator
     def s_qpsk(P):
         s_symbols = np.array([np.exp(1j*np.pi/4), np.exp(3j*np.pi/4),
                               np.exp(5j*np.pi/4), np.exp(-1j*np.pi/4)])
         return np.random.choice(s_symbols, size=(P,1))
-    
+    # ================================================================================================
     d_sigma = 10 ** (-SNR / 10)
     v_se_music = []
     last_spectrum = None
     last_theta_grid_deg = None
-    
+    # ================================================================================================
     for h in tqdm(range(N_test), desc=f"Processing MUSIC SNR={SNR}dB", ncols=100, unit="iteration"):
         m_R = np.zeros((d_Nr, d_Nr), dtype=complex)
         for l in range(1, L+1):
@@ -48,7 +49,7 @@ def vir_ULA(Nt, L, P, SNR, N_test):
                 if m > n:
                     m_R[n,m] = m_R[0,m-n]
                     m_R[m,n] = np.conj(m_R[n,m])
-        
+        # ================================================================================================
         # MUSIC
         v_eig_val, v_eig_vec = np.linalg.eig(m_R)
         idx_order = np.argsort(np.abs(v_eig_val))
@@ -62,17 +63,17 @@ def vir_ULA(Nt, L, P, SNR, N_test):
             d_Pm = (1 / (v_w.conj().T @ m_noise @ m_noise.conj().T @ v_w)).item()
             v_spectrum.append(10*np.log10(np.abs(d_Pm)))
         v_spectrum = np.array(v_spectrum)
-        
+        # ================================================================================================
         # Save last spectrum for plotting
         if h == N_test-1:
             last_spectrum = v_spectrum - np.max(np.abs(v_spectrum))  # Normalize
             last_theta_grid_deg = np.rad2deg(v_theta_grid)
-        
+        # ================================================================================================
         # Find peaks
         v_peaks, _ = find_peaks(v_spectrum, height=-100, distance=10, prominence=2)
         v_est_deg = [-90 + (180*i/(len(v_theta_grid)-1)) for i in v_peaks]
         v_est_deg = sorted(v_est_deg[:Nt])
-        
+        # ================================================================================================
         if len(v_est_deg) == d_Nt:
             d_se_music = np.sum((np.array(v_est_deg)-v_theta_deg_true)**2)/Ne
             v_se_music.append(d_se_music)
@@ -84,7 +85,7 @@ def vir_ULA(Nt, L, P, SNR, N_test):
     
     print(f"RMSE MUSIC @ {SNR} dB: {rmse_music}")
     return rmse_music, last_theta_grid_deg, last_spectrum
-
+# ===========================================================================================================
 # ===== Examples =====
 d_Nt = 8            # Number of sources  
 d_L  = 11           # Number of acquisitions
@@ -92,7 +93,7 @@ d_P = 1000          # Number of snapshots per acquisitions
 d_SNR = 20          # Signal-to-noise ratio
 d_N_test = 100      # Number of Monte Carlo simruns
 rmse, theta_grid_deg, spectrum = vir_ULA(d_Nt, d_L, d_P, d_SNR, d_N_test)
-
+# ===========================================================================================================
 if spectrum is not None and theta_grid_deg is not None:
     plt.figure(figsize=(10,6))
     plt.plot(theta_grid_deg, spectrum, label='Normalized spectrum', color='blue')
@@ -100,7 +101,7 @@ if spectrum is not None and theta_grid_deg is not None:
     plt.ylabel('Power (dB)')
     plt.title(f'Normalized Virtual ULA D-MUSIC Spectrum (dB)')
     plt.grid(True)
-    
+# ===========================================================================================================    
     # True DOA (fixed in function)
     theta_deg_true = [-60, -45, -30, 0, 15, 30, 45, 60]
     for angle in theta_deg_true:
