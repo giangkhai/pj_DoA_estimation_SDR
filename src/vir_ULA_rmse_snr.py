@@ -91,14 +91,14 @@ d_L  = 11           # Number of acquisitions
 d_P = 1000          # Number of snapshots per acquisitions
 d_SNR = 20          # Signal-to-noise ratio
 d_N_test = 100      # Number of Monte Carlo simruns
-rmse, theta_grid_deg, spectrum = vir_ULA(d_Nt, d_L d_P, d_SNR, d_N_test)
+rmse, theta_grid_deg, spectrum = vir_ULA(d_Nt, d_L, d_P, d_SNR, d_N_test)
 
 if spectrum is not None and theta_grid_deg is not None:
     plt.figure(figsize=(10,6))
-    plt.plot(theta_grid_deg, spectrum, label='Normalized D-MUSIC Spectrum (dB)', color='blue')
+    plt.plot(theta_grid_deg, spectrum, label='Normalized spectrum', color='blue')
     plt.xlabel('Angle (degrees)')
     plt.ylabel('Power (dB)')
-    plt.title(f'MUSIC Spectrum (SNR = 10 dB)')
+    plt.title(f'Normalized Virtual ULA D-MUSIC Spectrum (dB)')
     plt.grid(True)
     
     # True DOA (fixed in function)
