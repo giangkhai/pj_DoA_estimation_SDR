@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 
 def vir_UCA(Nr: int, Nt: int, P: int, SNR: float, N_test: int = 1):
     # ===== Constants =====
-    c_c = 3e8
-    c_fc = 39e6
-    Ne = Nt
-    d_d = c_c / (8 * c_fc * np.sin(np.pi/Nr)**2)
+    c_c = 3e8                                         # Speed of light
+    c_fc = 39e6                                       # Carrier frequency 
+    Ne = Nt                                           # Number of expected source
+    d_d = c_c / (8 * c_fc * np.sin(np.pi/Nr)**2)      # UCA antenna spacing
 
     # True DoA
     theta_deg_true = np.array([-60, -45, -30, 0, 15, 30, 45, 60])
