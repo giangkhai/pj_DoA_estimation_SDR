@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 
 def vir_UCA(Nr: int, Nt: int, P: int, SNR: float):
     # ===== Constants =====
-    d_c = 3e8                           # Speed of light
-    d_fc = 39e6                         # Carrier frequency
-    d_Ne = Nt                            # Expected sources
+    d_c = 3e8                                       # Speed of light
+    d_fc = 39e6                                     # Carrier frequency
+    d_Ne = Nt                                       # Expected sources
     d_d  = d_c / (8 * d_fc * np.sin(np.pi/Nr)**2)   # UCA spacing
 
     # True DoA (degrees & radians)
