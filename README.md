@@ -14,13 +14,13 @@ This repository contains code, data, and reports related to array configuration,
   Reference documents and bibliography.
 
 - **dat/**  
-  Transmitted and received data files.
+  Transmitted data files for USRPs.
 
 - **grc/**  
   GNU Radio Companion (`.grc`) flowgraphs for signal transmission and reception.
 
 - **req/**  
-  Requirements and dependency files (e.g., `requirements.txt` for Python).
+  Requirements and dependency files (e.g., `pj_DoA_estimation_SDR.txt` for Python).
 
 - **rp/**  
   Reports and related documentation.
