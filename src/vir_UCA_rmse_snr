@@ -1,0 +1,107 @@
+import numpy as np
+from tqdm import tqdm
+from scipy.signal import find_peaks
+import matplotlib.pyplot as plt
+
+def vir_UCA(Nr: int, Nt: int, P: int, SNR: float):
+    # ===== Constants =====
+    d_c = 3e8                           # Speed of light
+    d_fc = 39e6                         # Carrier frequency
+    d_Ne = Nt                            # Expected sources
+    d_d  = d_c / (8 * d_fc * np.sin(np.pi/Nr)**2)   # UCA spacing
+
+    # True DoA (degrees & radians)
+    v_theta_deg = np.array([-60, -45, -30, 0, 15, 30, 45, 60])
+    v_theta_rad = np.deg2rad(v_theta_deg)
+
+    # ===== Helper functions =====
+    def s_qpsk(P: int) -> np.ndarray:
+        """Generate QPSK symbols (P x 1)."""
+        v_const = np.array([
+            np.exp(1j*np.pi/4), np.exp(3j*np.pi/4),
+            np.exp(5j*np.pi/4), np.exp(7j*np.pi/4)
+        ])
+        return np.random.choice(v_const, size=(P,1))
+
+    def v_steer(theta: float, Nr: int) -> np.ndarray:
+        """Steering vector for angle theta."""
+        return np.exp(2j*np.pi*d_fc*d_d/d_c *
+                      np.cos(theta - 2*np.pi*np.arange(Nr)/Nr)).reshape(-1,1)
+
+    # ===== Simulation =====
+    d_sigma = 10**(-SNR/10)
+    v_err_MUSIC = []
+
+    # Covariance matrix
+    m_R = np.zeros((Nr,Nr), dtype=complex)
+
+    for _ in tqdm(range(1), desc=f"SNR={SNR}dB"):
+        # Fill covariance
+        for m_idx in range(Nr):
+            for n_idx in range(Nr):
+                v_s_m, v_s_mn = np.zeros((P,1),complex), np.zeros((P,1),complex)
+                for theta in v_theta_rad:
+                    v_s_base = s_qpsk(P)
+                    d_phi_m  = 2*np.pi*d_fc*d_d/d_c * np.cos(theta - 2*np.pi*m_idx/Nr)
+                    d_phi_mn = 2*np.pi*d_fc*d_d/d_c * np.cos(theta - 2*np.pi*(m_idx+n_idx)/Nr)
+                    v_s_m  += v_s_base*np.exp(1j*d_phi_m)
+                    v_s_mn += v_s_base*np.exp(1j*d_phi_mn)
+
+                # Add noise
+                v_s_m  += d_sigma/np.sqrt(2)*(np.random.randn(P,1)+1j*np.random.randn(P,1))
+                v_s_mn += d_sigma/np.sqrt(2)*(np.random.randn(P,1)+1j*np.random.randn(P,1))
+
+                if m_idx+n_idx < Nr and n_idx!=0:
+                    m_R[m_idx,m_idx+n_idx] = np.mean(v_s_m*np.conj(v_s_mn))
+                    m_R[m_idx+n_idx,m_idx] = np.conj(m_R[m_idx,m_idx+n_idx])
+                elif n_idx==0:
+                    m_R[m_idx,m_idx] = np.mean(v_s_m*np.conj(v_s_m))
+
+        # ===== MUSIC =====
+        v_eigval, m_eigvec = np.linalg.eig(m_R)
+        v_idx = np.argsort(np.abs(v_eigval))
+        m_noise = m_eigvec[:, v_idx[:Nr-d_Ne]]
+
+        v_theta_grid = np.linspace(-np.pi/2, np.pi/2, 720)
+        v_spectrum = []
+        for theta_g in v_theta_grid:
+            v_a = v_steer(theta_g, Nr)
+            d_Pm = 1 / (v_a.conj().T @ m_noise @ m_noise.conj().T @ v_a).item()
+            v_spectrum.append(10*np.log10(np.abs(d_Pm)))
+        v_spectrum = np.array(v_spectrum)
+
+        # Peak detection
+        v_peaks, _ = find_peaks(v_spectrum, height=5, distance=10, prominence=2)
+        v_est_deg = [-90 + (180*i/(len(v_theta_grid)-1)) for i in v_peaks]
+        v_est_deg = sorted(v_est_deg[:d_Ne])
+
+        if len(v_est_deg) >= d_Ne:
+            d_se = np.sum((np.array(v_est_deg)-v_theta_deg)**2)/d_Ne
+            v_err_MUSIC.append(d_se)
+
+        v_last_spectrum = v_spectrum - np.max(np.abs(v_spectrum))
+        v_last_theta_deg = np.rad2deg(v_theta_grid)
+
+    d_rmse = np.sqrt(np.mean(v_err_MUSIC))
+    print(f"RMSE MUSIC @ {SNR} dB: {d_rmse:.4f}")
+
+    return v_last_theta_deg, v_last_spectrum, d_rmse
+
+# ==== Example =====
+
+d_Nr = 12
+d_Nt = 8
+d_P = 2000
+d_SNR = 20
+
+theta_grid, music_spec, rmse = vir_UCA(d_Nr, d_Nt, d_P, d_SNR)
+
+# ===== Plot D-MUSIC spectrum =====
+plt.figure(figsize=(10,6))
+plt.plot(theta_grid, music_spec, 'b-', label="Normalized D-MUSIC Spectrum")
+for ang in [-60, -45, -30, 0, 15, 30, 45, 60]:
+    plt.axvline(x=ang, color='r', ls='--', alpha=0.5)
+plt.title(f"MUSIC Spectrum @ {c_SNR} dB")
+plt.xlabel("Angle (deg)"); plt.ylabel("Power (dB)")
+plt.grid(True); plt.legend(); plt.tight_layout()
+plt.show()
