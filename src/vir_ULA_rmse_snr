@@ -95,7 +95,7 @@ rmse, theta_grid_deg, spectrum = vir_ULA(d_Nt, d_L d_P, d_SNR, d_N_test)
 
 if spectrum is not None and theta_grid_deg is not None:
     plt.figure(figsize=(10,6))
-    plt.plot(theta_grid_deg, spectrum, label='MUSIC Spectrum (dB)', color='blue')
+    plt.plot(theta_grid_deg, spectrum, label='Normalized D-MUSIC Spectrum (dB)', color='blue')
     plt.xlabel('Angle (degrees)')
     plt.ylabel('Power (dB)')
     plt.title(f'MUSIC Spectrum (SNR = 10 dB)')
