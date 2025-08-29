@@ -20,12 +20,12 @@ This repository contains code, data, and reports related to array configuration,
   GNU Radio Companion (`.grc`) flowgraphs for signal transmission and reception.
 
 - **req/**  
-  Requirements and dependency files (e.g., `pj_DoA_estimation_SDR.txt` for Python).
+  Requirements (e.g., `pj_DoA_estimation_SDR.txt` for Python).
 
 - **rp/**  
-  Reports and related documentation.
+  Report.
 
 - **src/**  
-  Python source code for simulations and processing.
+  Python source code for simulations.
 
 ---
